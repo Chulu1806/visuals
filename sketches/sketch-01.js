@@ -1,59 +1,81 @@
 const canvasSketch = require('canvas-sketch');
-const {math, random} = require('canvas-sketch-util')
+const {random} = require('canvas-sketch-util')
 const settings = {
-  dimensions: [ 2048, 2048 ]
+  dimensions: [ 1000, 1000 ],
+  animate: true
 };
 
 // const degToRad = (degrees) => degrees / 180 * Math.PI
 
 // const randomRange = (min, max) => Math.random() * (max - min) + min
 
-const sketch = () => {
+const sketch = ({ width, height }) => {
+
+  const agents = []
+
+  for (let i = 0; i < 40; i++) {
+    const x = random.range(0, width)
+    const y = random.range(0, height)
+
+    agents.push(new Agent(x, y))
+  }
+  
   return ({ context, width, height }) => {
     context.fillStyle = 'white'
     context.fillRect(0, 0, width, height);
 
-    context.fillStyle = 'black'
+    const agent = new Agent(100, 100)
 
-    const cx = width * 0.5
-    const cy = height * 0.5
-
-    const w = width * 0.01
-    const h = height * 0.1
-    let x,y
-    const num = 40;
-    const radius = width * 0.3
-
-    for (let i = 0; i < num; i++) {
-      const slice = math.degToRad(360 / num)
-      const angle = slice * i
-
-      x = cx + radius * Math.sin(angle)
-      y = cy + radius * Math.cos(angle)
-
-      context.save()
-      context.translate(x,y)
-      context.rotate(-angle)
-      context.scale(random.range(0.1, 1), random.range(0.2, 0.5))
-  
-      context.beginPath()
-      context.rect(w * 0.5, h * 0.5, w, h)
-      context.fill()
-      context.restore()
-
-      context.save()
-      context.translate(cx, cy)
-      context.rotate(-angle)
-
-      context.lineWidth = random.range(5, 10)
-
-      context.beginPath()
-      context.arc(0,0, radius * random.range(0.7, 1.3), slice * random.range(1, -8), slice * random.range(1, 5))
-      context.stroke()
-      context.restore()
-    }
+    // agent.draw(context)
+    console.log(agents)
+    agents.forEach(agent => {
+      agent.update()
+      agent.draw(context)
+      agent.bounce(width, height)
+    })
 
   };
 };
 
 canvasSketch(sketch, settings);
+
+// CLASSES
+
+class Vector {
+  constructor(x, y) {
+    this.x = x
+    this.y = y
+  }
+}
+
+class Agent {
+  constructor(x, y) {
+    this.pos = new Vector(x, y)
+    this.vel = new Vector(random.range(-3 , 3 ), random.range(-3 , 3 ))
+    this.radius = random.range(4,12)
+  }
+
+  bounce(w, h) {
+    if (this.pos.x <= 0 || this.pos.x >= w) this.vel.x *= -1
+    if (this.pos.y <= 0 || this.pos.y >= h) this.vel.y *= -1
+  }
+
+  update() {
+    this.pos.x += this.vel.x
+    this.pos.y += this.vel.y
+  }
+
+  draw(context) {
+    context.save()
+    context.translate(this.pos.x, this.pos.y)
+    
+    context.lineWidth = 4
+
+    context.beginPath()
+    context.arc(0, 0, this.radius, 0, Math.PI * 2)
+    context.fill()
+    context.stroke()
+
+    context.restore()
+  }
+}
